@@ -15,7 +15,7 @@ public interface AbonnementService {
 
     boolean resilierAbonnement(String id);
 
-    Optional<Abonnement> trouverParId(String id);
+    Abonnement trouverParId(String id);
 
     List<Abonnement> listerTous();
 

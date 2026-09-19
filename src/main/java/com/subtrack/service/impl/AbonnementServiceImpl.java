@@ -5,18 +5,14 @@ import java.util.List;
 
 import com.subtrack.dao.AbonnementDAO;
 import com.subtrack.dao.PaiementDAO;
-import com.subtrack.dao.impl.PaiementDAOImpl;
 import com.subtrack.entity.Abonnement;
-import com.subtrack.exception.BusinessValidationException;
-import com.subtrack.exception.EntityNotFoundException;
-import com.subtrack.exception.ValidationException;
-import com.subtrack.service.AbonnementService;
+import com.subtrack.entity.AbonnementAvecEngagement;
+import com.subtrack.entity.Paiement;
 import com.subtrack.entity.enums.StatutAbonnement;
 import com.subtrack.entity.enums.StatutPaiement;
-import com.subtrack.entity.enums.TypePaiement;
-import com.subtrack.entity.AbonnementAvecEngagement;
-import com.subtrack.entity.AbonnementSansEngagement;
-import com.subtrack.entity.Paiement;
+import com.subtrack.exception.BusinessValidationException;
+import com.subtrack.exception.EntityNotFoundException;
+import com.subtrack.service.AbonnementService;
 
 public class AbonnementServiceImpl implements AbonnementService {
 
@@ -39,23 +35,33 @@ public class AbonnementServiceImpl implements AbonnementService {
         if (abonnement.getNomService() == null || abonnement.getNomService().trim().isEmpty()) {
             throw new BusinessValidationException("Le nom du service ne peut pas être vide.");
         }
-        abonnementDAO.creat(abonnement);
+        if (abonnement.getDateDebut() == null) {
+            abonnement.setDateDebut(LocalDate.now());
+        }
+
+        abonnementDAO.create(abonnement);
         genererEcheances(abonnement.getId());
         return abonnement;
     }
 
     @Override
     public Abonnement modifierAbonnement(Abonnement abonnement) {
-        if (abonnement == null)
+        if (abonnement == null) {
             throw new BusinessValidationException("L'abonnement ne peut pas être null.");
-
-        if (abonnement.getMontantMensuel() <= 0)
+        }
+        if (abonnement.getId() == null || abonnement.getId().trim().isEmpty()) {
+            throw new BusinessValidationException("L'ID de l'abonnement est obligatoire pour la modification.");
+        }
+        if (abonnement.getMontantMensuel() <= 0) {
             throw new BusinessValidationException("Le montant mensuel doit être supérieur à 0.");
-        if (abonnement.getNomService() == null || abonnement.getNomService().trim().isEmpty())
+        }
+        if (abonnement.getNomService() == null || abonnement.getNomService().trim().isEmpty()) {
             throw new BusinessValidationException("Le nom du service ne peut pas être vide.");
+        }
 
         Abonnement abnmt = abonnementDAO.findById(abonnement.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Abonnement inrovable " + abonnement.getId()));
+                .orElseThrow(
+                        () -> new EntityNotFoundException("Abonnement introuvable avec l'ID: " + abonnement.getId()));
 
         abnmt.setNomService(abonnement.getNomService());
         abnmt.setMontantMensuel(abonnement.getMontantMensuel());
@@ -67,25 +73,30 @@ public class AbonnementServiceImpl implements AbonnementService {
     @Override
     public boolean supprimerAbonnement(String id) {
         Abonnement abnmt = abonnementDAO.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Abonnement introvable !"));
-        if (abonnementDAO.delete(abnmt.getId())) {
-            return true;
-        } else {
-            return false;
-        }
+                .orElseThrow(() -> new EntityNotFoundException("Abonnement introuvable avec l'ID: " + id));
+
+        paiementDAO.findByAbonnement(abnmt.getId())
+                .forEach(p -> paiementDAO.delete(p.getIdPaiement()));
+
+        return abonnementDAO.delete(abnmt.getId());
     }
 
     @Override
-
     public List<Abonnement> listerTous() {
         return abonnementDAO.findAll();
     }
 
     @Override
-    public void genererEcheances(String idAbonnement) throws EntityNotFoundException {
+    public Abonnement trouverParId(String id) {
+        return abonnementDAO.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Abonnement introuvable avec l'ID: " + id));
+    }
 
+    @Override
+    public void genererEcheances(String idAbonnement) {
         Abonnement abonnement = abonnementDAO.findById(idAbonnement)
-                .orElseThrow(() -> new EntityNotFoundException("Abonnement introuvable  " + idAbonnement));
+                .orElseThrow(() -> new EntityNotFoundException("Abonnement introuvable avec l'ID: " + idAbonnement));
+
         int nbrMois = 1;
         if (abonnement instanceof AbonnementAvecEngagement) {
             nbrMois = ((AbonnementAvecEngagement) abonnement).getDureeEngagementMois();
@@ -108,24 +119,26 @@ public class AbonnementServiceImpl implements AbonnementService {
         return abonnementDAO.findByType(type);
     }
 
-    
     @Override
-    public void resilierAbonnement(String id) {
+    public boolean resilierAbonnement(String id) {
         Abonnement abnmt = abonnementDAO.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("abonnement Introvelbel !"));
+                .orElseThrow(() -> new EntityNotFoundException("Abonnement introuvable avec l'ID: " + id));
+
         if (abnmt.getStatut() == StatutAbonnement.RESILIE) {
             throw new BusinessValidationException("Cet abonnement est déjà résilié.");
         }
 
+        LocalDate dateResiliation = LocalDate.now();
         abnmt.setStatut(StatutAbonnement.RESILIE);
-        LocalDate dateResileir = LocalDate.now();
-        abnmt.setDateFin(dateResileir);
+        abnmt.setDateFin(dateResiliation);
         abonnementDAO.update(abnmt);
 
-        paiementDAO.findByAbonnement(id).stream().filter(p -> p.getStatut() == StatutPaiement.NON_PAYE)
-                .filter(p -> p.getDateEcheance().isAfter(dateResileir))
+        // Nettoyage des échéances futures non réglées
+        paiementDAO.findByAbonnement(id).stream()
+                .filter(p -> p.getStatut() == StatutPaiement.NON_PAYE)
+                .filter(p -> p.getDateEcheance().isAfter(dateResiliation))
                 .forEach(p -> paiementDAO.delete(p.getIdPaiement()));
+
+        return true;
     }
-
-
 }

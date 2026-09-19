@@ -6,7 +6,7 @@ import java.util.List;
 public interface AbonnementDAO
  {
 
-    Abonnement creat(Abonnement abonnement);
+    Abonnement create(Abonnement abonnement);
     Optional<Abonnement> findById(String id);
     List<Abonnement>findAll();
     boolean update(Abonnement abonnement);
