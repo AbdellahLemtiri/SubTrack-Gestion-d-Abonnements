@@ -4,7 +4,7 @@ import java.time.LocalDate;
 
 import com.subtrack.entity.enums.StatutAbonnement;
 
-class AbonnementAvecEngagement extends Abonnement {
+public class AbonnementAvecEngagement extends Abonnement {
 
     private int dureeEngagementMois;
 
