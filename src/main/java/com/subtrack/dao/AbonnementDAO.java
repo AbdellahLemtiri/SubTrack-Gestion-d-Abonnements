@@ -2,8 +2,8 @@ package com.subtrack.dao;
 
 import com.subtrack.entity.Abonnement;
 import java.util.Optional;
-
-public innterface AbonnementDAO
+import java.util.List;
+public interface AbonnementDAO
  {
 
     Abonnement creat(Abonnement abonnement);
