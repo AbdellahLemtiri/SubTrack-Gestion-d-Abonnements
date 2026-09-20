@@ -133,7 +133,7 @@ public class AbonnementServiceImpl implements AbonnementService {
         abnmt.setDateFin(dateResiliation);
         abonnementDAO.update(abnmt);
 
-        // Nettoyage des échéances futures non réglées
+        
         paiementDAO.findByAbonnement(id).stream()
                 .filter(p -> p.getStatut() == StatutPaiement.NON_PAYE)
                 .filter(p -> p.getDateEcheance().isAfter(dateResiliation))
