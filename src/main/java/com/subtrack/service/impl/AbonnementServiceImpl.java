@@ -7,6 +7,7 @@ import com.subtrack.dao.AbonnementDAO;
 import com.subtrack.dao.PaiementDAO;
 import com.subtrack.entity.Abonnement;
 import com.subtrack.entity.AbonnementAvecEngagement;
+import com.subtrack.entity.AbonnementSansEngagement;
 import com.subtrack.entity.Paiement;
 import com.subtrack.entity.enums.StatutAbonnement;
 import com.subtrack.entity.enums.StatutPaiement;
@@ -24,24 +25,45 @@ public class AbonnementServiceImpl implements AbonnementService {
         this.paiementDAO = paiementDAO;
     }
 
-    @Override
-    public Abonnement creerAbonnement(Abonnement abonnement) {
-        if (abonnement == null) {
-            throw new BusinessValidationException("L'abonnement ne peut pas être null.");
+    public Abonnement creerAbonnementAvecEngagement(String nomService, double montantMensuel, LocalDate dateDebut,
+            int dureeEngagementMois) {
+        validerChampsCommuns(nomService, montantMensuel);
+        if (dureeEngagementMois <= 0) {
+            throw new BusinessValidationException("La durée d'engagement doit être supérieure à 0.");
         }
-        if (abonnement.getMontantMensuel() <= 0) {
-            throw new BusinessValidationException("Le montant mensuel doit être supérieur à 0.");
+        if (dateDebut == null) {
+            dateDebut = LocalDate.now();
         }
-        if (abonnement.getNomService() == null || abonnement.getNomService().trim().isEmpty()) {
-            throw new BusinessValidationException("Le nom du service ne peut pas être vide.");
-        }
-        if (abonnement.getDateDebut() == null) {
-            abonnement.setDateDebut(LocalDate.now());
+ 
+        LocalDate dateFin = dateDebut.plusMonths(dureeEngagementMois);
+        Abonnement abnmt = new AbonnementAvecEngagement(nomService, montantMensuel, dateDebut,dateFin,
+                dureeEngagementMois);
+
+        abonnementDAO.create(abnmt);
+        genererEcheances(abnmt.getId());
+        return abnmt;
+    }
+
+    public Abonnement creerAbonnementSansEngagement(String nomService, double montantMensuel, LocalDate dateDebut) {
+        validerChampsCommuns(nomService, montantMensuel);
+        if (dateDebut == null) {
+            dateDebut = LocalDate.now();
         }
 
-        abonnementDAO.create(abonnement);
-        genererEcheances(abonnement.getId());
-        return abonnement;
+        Abonnement abnmt = new AbonnementSansEngagement(nomService, montantMensuel, dateDebut);
+
+        abonnementDAO.create(abnmt);
+        genererEcheances(abnmt.getId());
+        return abnmt;
+    }
+
+    private void validerChampsCommuns(String nomService, double montantMensuel) {
+        if (montantMensuel <= 0) {
+            throw new BusinessValidationException("Le montant mensuel doit être supérieur à 0.");
+        }
+        if (nomService == null || nomService.trim().isEmpty()) {
+            throw new BusinessValidationException("Le nom du service ne peut pas être vide.");
+        }
     }
 
     @Override
@@ -133,7 +155,6 @@ public class AbonnementServiceImpl implements AbonnementService {
         abnmt.setDateFin(dateResiliation);
         abonnementDAO.update(abnmt);
 
-        
         paiementDAO.findByAbonnement(id).stream()
                 .filter(p -> p.getStatut() == StatutPaiement.NON_PAYE)
                 .filter(p -> p.getDateEcheance().isAfter(dateResiliation))

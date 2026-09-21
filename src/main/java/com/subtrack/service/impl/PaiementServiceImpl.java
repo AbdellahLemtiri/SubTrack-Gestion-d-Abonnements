@@ -165,5 +165,15 @@ public class PaiementServiceImpl implements PaiementService {
         return detecterImpayes().stream()
                 .sorted(Comparator.comparing(Paiement::getDateEcheance))
                 .collect(Collectors.toList());
+
     }
+
+    @Override
+
+    public List<Paiement> listerParAbonnement(String id)
+
+    {
+        return paiementDAO.findByAbonnement(id);
+    }
+
 }

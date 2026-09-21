@@ -1,13 +1,17 @@
 package com.subtrack.service;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
+
 
 import com.subtrack.entity.Abonnement;
 
 public interface AbonnementService {
 
-    Abonnement creerAbonnement(Abonnement abonnement);
+    Abonnement creerAbonnementAvecEngagement(String nomService, double montantMensuel, LocalDate dateDebut,
+            int dureeEngagementMois);
+
+    Abonnement creerAbonnementSansEngagement(String nomService, double montantMensuel, LocalDate dateDebut);
 
     Abonnement modifierAbonnement(Abonnement abonnement);
 

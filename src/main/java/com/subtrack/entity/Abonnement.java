@@ -14,13 +14,13 @@ public abstract class Abonnement {
     protected LocalDate dateFin;
     protected StatutAbonnement statut;
 
-    public Abonnement(String nomService, double montantMensuel, LocalDate dateDebut, LocalDate dateFin, StatutAbonnement statut) {
+    public Abonnement(String nomService, double montantMensuel, LocalDate dateDebut, LocalDate dateFin) {
         this.id = UUID.randomUUID().toString();
         this.nomService = nomService;
         this.montantMensuel = montantMensuel;
         this.dateDebut = dateDebut;
         this.dateFin = dateFin;
-        this.statut = statut;
+        this.statut = StatutAbonnement.ACTIVE;
     }
 
     public Abonnement(String id, String nomService, double montantMensuel, LocalDate dateDebut, LocalDate dateFin, StatutAbonnement statut) {

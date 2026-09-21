@@ -18,21 +18,23 @@ public interface PaiementService {
 
     boolean supprimerPaiement(String id);
 
-    Map<String, Object> detectionEmpayes();
-
-    double totalEmpayes();
 
     List<Paiement> detecterImpayesParAbonnement(String idAbonnement);
 
     double calculerTotalImpayeParAbonnement(String idAbonnement);
 
+    Map<String, Object> detecterImpayesAvecEngagement();
+
     double calculerSommePayeeParAbonnement(String idAbonnement);
 
     List<Paiement> getDerniersPaiements(int limit);
+
+    List<Paiement> detecterImpayes();
 
     Map<String, Double> genererRapportMensuel();
 
     Map<Integer, Double> genererRapportAnnuel();
 
     List<Paiement> genererRapportImpayes();
+    List<Paiement> listerParAbonnement(String id);
 }
